@@ -7,6 +7,7 @@ threshold = 5
 window_seconds = 60
 
 
+# Read and process login events from the log file
 try:
     with open("login_events.txt", "r") as file:
         for line in file:
@@ -17,7 +18,8 @@ try:
 
             event = {
                 "timestamp": event_time,
-                "ip": parts[2]
+                "ip": parts[2],
+                "username": parts[3]
             }
 
             login_events.append(event)
@@ -35,30 +37,53 @@ for event in login_events:
     failed_logins[ip] += 1
 
 
-for ip in failed_logins:
-    # print(status, ip, "-", attempts, "failed attempts")
+# Analyze each IP address for repeated login attempts
+with open("alerts.txt", "a") as alert_file:
+    for ip in failed_logins:
+        ip_events = []
 
-    ip_events = []
+        for event in login_events:
+            if event["ip"] == ip:
+                ip_events.append(event)
 
-    for event in login_events:
-        if event["ip"] == ip:
-            ip_events.append(event)
+        highest_count = 0
+        start_time = None
+        end_time = None
+        username = None
 
+        # Check each event at the start of a time window
+        for i in range(len(ip_events)):
+            count = 1
+            current_end_time = ip_events[i]["timestamp"]
 
-    for i in range(len(ip_events)):
-        count = 1
-        end_time = ip_events[i]["timestamp"]
+            # Compare the current event with later
+            for j in range(i + 1, len(ip_events)):
+                difference = ip_events[j]["timestamp"] - ip_events[i]["timestamp"]
+                seconds = difference.total_seconds()
 
-        for j in range(i + 1, len(ip_events)):
-            difference = ip_events[j]["timestamp"] - ip_events[i]["timestamp"]
-            seconds = difference.total_seconds()
+                # Count attempts that within time window
+                if seconds <= window_seconds:
+                    count += 1
+                    current_end_time = ip_events[j]["timestamp"]
+                else:
+                    break
 
-            if seconds <= window_seconds:
-                count += 1
-                end_time = ip_events[j]["timestamp"]
+            if count > highest_count:
+                highest_count = count
+                start_time = ip_events[i]["timestamp"]
+                end_time = current_end_time
+                username = ip_events[i]["username"]
+
+        if highest_count >= threshold:
+
+            alert_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            if highest_count >= 8:
+                severity = "HIGH"
             else:
-                break
+                severity = "MEDIUM"
 
-        if count >= threshold:
-            print("ALERT:", ip, "-", count, "attempts from", ip_events[i]["timestamp"], "to", end_time)
-            break
+            alert_message = f"[{severity}] {alert_time} - {ip} - {username} - {highest_count} attempts from {start_time} to {end_time}"
+
+            print(alert_message)
+            alert_file.write(alert_message + "\n")
