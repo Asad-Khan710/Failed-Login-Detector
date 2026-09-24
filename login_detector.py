@@ -2,6 +2,7 @@ from datetime import datetime
 
 login_events = []
 failed_logins = {}
+invalid_lines = 0
 
 threshold = 5
 window_seconds = 60
@@ -13,8 +14,17 @@ try:
         for line in file:
             parts = line.split()
 
+            if len(parts) < 4:
+                invalid_lines += 1
+                continue
+
             timestamp = parts[0] + " " + parts[1]
-            event_time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+
+            try:
+                event_time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                invalid_lines += 1
+                continue
 
             event = {
                 "timestamp": event_time,
@@ -87,3 +97,7 @@ with open("alerts.txt", "a") as alert_file:
 
             print(alert_message)
             alert_file.write(alert_message + "\n")
+
+
+print(f"Processed {len(login_events)} valid events")
+print(f"Skipped {invalid_lines} invalid lines")
