@@ -47,6 +47,7 @@ for ip in failed_logins:
 
     for i in range(len(ip_events)):
         count = 1
+        end_time = ip_events[i]["timestamp"]
 
         for j in range(i + 1, len(ip_events)):
             difference = ip_events[j]["timestamp"] - ip_events[i]["timestamp"]
@@ -54,10 +55,10 @@ for ip in failed_logins:
 
             if seconds <= window_seconds:
                 count += 1
+                end_time = ip_events[j]["timestamp"]
             else:
                 break
 
         if count >= threshold:
-            end_time = ip_events[j - 1]["timestamp"]
             print("ALERT:", ip, "-", count, "attempts from", ip_events[i]["timestamp"], "to", end_time)
             break
