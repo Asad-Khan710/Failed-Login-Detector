@@ -4,13 +4,7 @@ login_events = []
 failed_logins = {}
 
 threshold = 5
-
-
-def analyze_ip(ip, attempts):
-    if attempts >= threshold:
-        return "ALERT", attempts
-    else:
-        return "NORMAL", attempts
+window_seconds = 60
 
 
 try:
@@ -42,8 +36,7 @@ for event in login_events:
 
 
 for ip in failed_logins:
-    status, attempts = analyze_ip(ip, failed_logins[ip])
-    print(status, ip, "-", attempts, "failed attempts")
+    # print(status, ip, "-", attempts, "failed attempts")
 
     ip_events = []
 
@@ -59,11 +52,12 @@ for ip in failed_logins:
             difference = ip_events[j]["timestamp"] - ip_events[i]["timestamp"]
             seconds = difference.total_seconds()
 
-            if seconds <= 60:
+            if seconds <= window_seconds:
                 count += 1
             else:
                 break
 
         if count >= threshold:
-            print("ALERT:", ip, "-", count, "attempts within 60 seconds")
+            end_time = ip_events[j - 1]["timestamp"]
+            print("ALERT:", ip, "-", count, "attempts from", ip_events[i]["timestamp"], "to", end_time)
             break
