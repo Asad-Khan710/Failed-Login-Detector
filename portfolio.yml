@@ -1,0 +1,25 @@
+title: Failed Login Detector
+
+description: >
+  Python tool for analyzing login events and identifying
+  suspicious patterns involving repeated failed logins.
+
+difficulty: easy
+
+tags:
+  - Python
+  - Cybersecurity
+  - Log Analysis
+
+tools:
+  - Python
+
+approach: >
+  Built a Python-based detector that tracks failed login
+  attempts by IP address and identifies activity that
+  reaches a configurable threshold.
+
+learnings: >
+  Learned how to work with authentication events, dictionaries,
+  lists, thresholds, and basic detection logic to identify
+  potentially suspicious login activity.
